@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.db
+.pytest_cache/
+venv/
+env/
+.vscode/
+.DS_Store
+spending_by_category.png

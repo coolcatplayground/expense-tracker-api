@@ -1,0 +1,84 @@
+"""
+database.py
+------------
+Handles everything related to talking to our SQLite database.
+
+Why SQLite? It's a single file (no server to install/run), which makes it
+perfect for a beginner project. Everything you learn here (SQL, connections,
+cursors) transfers directly to bigger databases like PostgreSQL or MySQL.
+"""
+
+import sqlite3
+
+DB_NAME = "expenses.db"
+
+
+def get_connection():
+    """Open a connection to the database file."""
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row  # lets us access columns by name, e.g. row["amount"]
+    return conn
+
+
+def init_db():
+    """
+    Create the expenses table if it doesn't already exist.
+    Run this once when the app starts up.
+    """
+    conn = get_connection()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            description TEXT NOT NULL,
+            category TEXT NOT NULL,
+            amount REAL NOT NULL,
+            date TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def add_expense(description, category, amount, date):
+    conn = get_connection()
+    cursor = conn.execute(
+        "INSERT INTO expenses (description, category, amount, date) VALUES (?, ?, ?, ?)",
+        (description, category, amount, date),
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+    conn.close()
+    return new_id
+
+
+def get_all_expenses():
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM expenses ORDER BY date DESC").fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+def get_expense_by_id(expense_id):
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM expenses WHERE id = ?", (expense_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def update_expense(expense_id, description, category, amount, date):
+    conn = get_connection()
+    conn.execute(
+        """UPDATE expenses
+           SET description = ?, category = ?, amount = ?, date = ?
+           WHERE id = ?""",
+        (description, category, amount, date, expense_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_expense(expense_id):
+    conn = get_connection()
+    conn.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
+    conn.commit()
+    conn.close()

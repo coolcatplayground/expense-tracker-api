@@ -1,0 +1,119 @@
+# Expense Tracker API
+
+A small REST API for tracking personal expenses, built with **Flask** and **SQLite**, with a bonus data-analysis script using **pandas** and **matplotlib**.
+
+This is a beginner-friendly project built to demonstrate core backend and data skills:
+- Designing and querying a relational database
+- Building a REST API (CRUD operations)
+- Basic data analysis and visualization
+- Automated testing with pytest
+
+## Features
+
+- Add, view, update, and delete expenses
+- Get a spending summary (total + breakdown by category)
+- Generate a bar chart of spending by category
+- Full test suite covering every endpoint
+
+## Tech Stack
+
+- **Python 3**
+- **Flask** – web framework / REST API
+- **SQLite** – lightweight database (no server setup required)
+- **pandas** & **matplotlib** – data analysis and charting
+- **pytest** – automated testing
+
+## Getting Started
+
+### 1. Clone the repo
+```bash
+git clone https://github.com/YOUR-USERNAME/expense-tracker-api.git
+cd expense-tracker-api
+```
+
+### 2. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. (Optional) Add some sample data
+```bash
+python seed_data.py
+```
+
+### 4. Run the API
+```bash
+python app.py
+```
+The API will be running at `http://127.0.0.1:5000`.
+
+### 5. Run the data analysis script
+```bash
+python analyze.py
+```
+This prints a spending summary in your terminal and saves a chart to `spending_by_category.png`.
+
+### 6. Run the tests
+```bash
+pytest
+```
+
+## API Endpoints
+
+| Method | Endpoint             | Description                          |
+|--------|-----------------------|---------------------------------------|
+| GET    | `/expenses`           | List all expenses                    |
+| GET    | `/expenses/<id>`      | Get a single expense                 |
+| POST   | `/expenses`           | Add a new expense                    |
+| PUT    | `/expenses/<id>`      | Update an existing expense           |
+| DELETE | `/expenses/<id>`      | Delete an expense                    |
+| GET    | `/expenses/summary`   | Total spend + breakdown by category  |
+
+### Example: Add an expense
+```bash
+curl -X POST http://127.0.0.1:5000/expenses \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Groceries", "category": "Food", "amount": 45.50, "date": "2026-07-04"}'
+```
+
+### Example: Get a summary
+```bash
+curl http://127.0.0.1:5000/expenses/summary
+```
+```json
+{
+  "total_spent": 310.74,
+  "by_category": {
+    "Transport": 100.0,
+    "Food": 94.55,
+    "Utilities": 78.2,
+    "Entertainment": 37.99
+  }
+}
+```
+
+## Project Structure
+```
+expense-tracker-api/
+├── app.py              # Flask app and API routes
+├── database.py         # SQLite database logic
+├── analyze.py          # Data analysis + chart generation
+├── seed_data.py        # Adds sample data for testing
+├── requirements.txt
+├── tests/
+│   └── test_app.py     # Automated tests (pytest)
+└── README.md
+```
+
+## Possible Improvements
+
+Ideas for extending this project further (good for a v2!):
+- Add user authentication so multiple people can track their own expenses
+- Switch to PostgreSQL for a more production-ready database
+- Add filtering/sorting (e.g. expenses by date range or category)
+- Build a simple frontend (HTML/React) to interact with the API visually
+- Deploy it live (Render, Railway, or Fly.io all have free tiers)
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).

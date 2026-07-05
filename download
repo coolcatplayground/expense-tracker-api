@@ -1,0 +1,122 @@
+"""
+test_app.py
+-----------
+Basic tests for the Expense Tracker API using pytest.
+
+Run with:
+    pytest
+
+These tests use a temporary test database so they never touch your real
+expenses.db file.
+"""
+
+import os
+import sys
+import pytest
+
+# Make sure we can import app.py and database.py from the parent folder
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+import database
+import app as flask_app
+
+
+@pytest.fixture
+def client():
+    # Use a separate test database so we don't mess with real data
+    database.DB_NAME = "test_expenses.db"
+    flask_app.app.config["TESTING"] = True
+
+    database.init_db()
+
+    with flask_app.app.test_client() as client:
+        yield client
+
+    # Clean up the test database file after each test
+    if os.path.exists("test_expenses.db"):
+        os.remove("test_expenses.db")
+
+
+def test_home_page(client):
+    response = client.get("/")
+    assert response.status_code == 200
+
+
+def test_create_and_get_expense(client):
+    response = client.post("/expenses", json={
+        "description": "Test lunch",
+        "category": "Food",
+        "amount": 12.50,
+        "date": "2026-07-01",
+    })
+    assert response.status_code == 201
+    expense_id = response.get_json()["id"]
+
+    response = client.get(f"/expenses/{expense_id}")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["description"] == "Test lunch"
+    assert data["amount"] == 12.50
+
+
+def test_missing_fields_returns_400(client):
+    response = client.post("/expenses", json={"description": "Incomplete"})
+    assert response.status_code == 400
+
+
+def test_get_nonexistent_expense_returns_404(client):
+    response = client.get("/expenses/9999")
+    assert response.status_code == 404
+
+
+def test_update_expense(client):
+    create_resp = client.post("/expenses", json={
+        "description": "Old value",
+        "category": "Food",
+        "amount": 10.00,
+        "date": "2026-07-01",
+    })
+    expense_id = create_resp.get_json()["id"]
+
+    update_resp = client.put(f"/expenses/{expense_id}", json={
+        "description": "New value",
+        "category": "Food",
+        "amount": 20.00,
+        "date": "2026-07-02",
+    })
+    assert update_resp.status_code == 200
+
+    check = client.get(f"/expenses/{expense_id}").get_json()
+    assert check["description"] == "New value"
+    assert check["amount"] == 20.00
+
+
+def test_delete_expense(client):
+    create_resp = client.post("/expenses", json={
+        "description": "To be deleted",
+        "category": "Misc",
+        "amount": 5.00,
+        "date": "2026-07-01",
+    })
+    expense_id = create_resp.get_json()["id"]
+
+    delete_resp = client.delete(f"/expenses/{expense_id}")
+    assert delete_resp.status_code == 200
+
+    get_resp = client.get(f"/expenses/{expense_id}")
+    assert get_resp.status_code == 404
+
+
+def test_summary_endpoint(client):
+    client.post("/expenses", json={
+        "description": "Coffee", "category": "Food", "amount": 5.00, "date": "2026-07-01"
+    })
+    client.post("/expenses", json={
+        "description": "Bus", "category": "Transport", "amount": 3.00, "date": "2026-07-01"
+    })
+
+    response = client.get("/expenses/summary")
+    data = response.get_json()
+    assert data["total_spent"] == 8.00
+    assert data["by_category"]["Food"] == 5.00
+    assert data["by_category"]["Transport"] == 3.00
